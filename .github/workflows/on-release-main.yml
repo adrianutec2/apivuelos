@@ -1,0 +1,39 @@
+on:
+  release:
+    types: [published]
+
+name: release-master
+
+jobs:
+
+  Release:
+    runs-on: ubuntu-latest
+    steps:
+    
+      - name: Check out
+        uses: actions/checkout@v2
+
+      - name: Authenticate GCP
+        uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.DOCKER_PUSHER_SERVICE_ACCOUNT_KEY }}'
+
+      - name: Get tag
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Set up gcloud SDK
+        uses: 'google-github-actions/setup-gcloud@v0'
+
+      - name: Configure docker for GCP
+        run: gcloud auth configure-docker us-cenrtal1-docker.pkg.dev
+
+      - name: Build docker image
+        run:  docker build . -t us-central1-docker.pkg.dev/challengesep2023/docker-repository/api-vuelos:${RELEASE_VERSION}
+        env:
+            RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+
+      - name: Push to Google Container Registry
+        run:  docker push us-central1-docker.pkg.dev/challengesep2023/docker-repository/api-vuelos:${RELEASE_VERSION}
+        env:
+            RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
