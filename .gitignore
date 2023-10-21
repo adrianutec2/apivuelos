@@ -1,0 +1,2 @@
+# ignore servie account s credentials in json files
+terrainfra/*.json
